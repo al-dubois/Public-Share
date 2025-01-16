@@ -1,0 +1,119 @@
+﻿<!DOCTYPE html>
+<html>
+<head>
+    <style>
+        body { 
+            font-family: Arial, sans-serif; 
+            margin: 20px;
+            line-height: 1.6;
+        }
+        table { 
+            border-collapse: collapse; 
+            width: 100%; 
+            margin-bottom: 20px;
+            font-size: 14px;
+        }
+        th, td { 
+            border: 1px solid #ddd; 
+            padding: 8px; 
+            text-align: left; 
+        }
+        th { 
+            background-color: #f2f2f2; 
+            font-weight: bold;
+        }
+        tr:nth-child(even) {
+            background-color: #f9f9f9;
+        }
+        tr:hover {
+            background-color: #f5f5f5;
+        }
+        .test-mode { 
+            color: #ff6b6b; 
+            font-weight: bold;
+        }
+        .high-impact { 
+            color: #dc3545; 
+            font-weight: bold;
+        }
+        .medium-impact { 
+            color: #ffc107; 
+            font-weight: bold;
+        }
+        .code-block { 
+            background-color: #f8f9fa;
+            padding: 15px;
+            border-radius: 4px;
+            font-family: Consolas, Monaco, 'Courier New', monospace;
+            margin: 10px 0;
+            border: 1px solid #e9ecef;
+            white-space: pre-wrap;
+        }
+        .remediation-box {
+            border: 1px solid #dee2e6;
+            padding: 20px;
+            margin: 15px 0;
+            border-radius: 6px;
+            background-color: #fff;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        }
+        .section {
+            margin-bottom: 30px;
+        }
+        h1, h2, h3 {
+            color: #2c3e50;
+        }
+        .summary-table {
+            max-width: 800px;
+        }
+        .events-table {
+            font-size: 13px;
+        }
+    </style>
+</head>
+<body>
+    <h1>Certificate Authentication Event Analysis <span class="test-mode">(TEST MODE)</span></h1>
+    
+    <div class="section">
+        <h2>Server Information</h2>
+        <p><strong>Server:</strong> TEST-DC01</p>
+        <p><strong>Enforcement Mode:</strong> Audit Mode</p>
+        <p><strong>Time Range:</strong> 01/15/2025 13:24:14 to 01/16/2025 13:24:14</p>
+    </div>
+    
+    <div class="section">
+        <h2>Event Summary</h2>
+        <table class="summary-table"> <colgroup><col/><col/><col/></colgroup> <tr><th>EventID</th><th>Description</th><th>Count</th></tr> <tr><td>39</td><td>No strong certificate mapping found</td><td>2</td></tr> <tr><td>40</td><td>Certificate predates account</td><td>5</td></tr> <tr><td>41</td><td>User SID mismatch with certificate SID</td><td>3</td></tr> </table>
+    </div>
+    
+    <div class="section">
+        <h2>Remediation Steps</h2>
+                    <div class='remediation-box'>
+                <h3>Running in Audit Mode</h3>
+                <p><strong>Impact: </strong><span class='medium---preparing-for-february-2025-deadline-impact'>MEDIUM - Preparing for February 2025 deadline</span></p>
+                <p><strong>Recommended Action: </strong>Monitor events and plan to change to Enforcement Mode (value 2) before February 2025</p>
+                <div class='code-block'>Set-ItemProperty -Path "HKLM:\SYSTEM\CurrentControlSet\Services\Kdc" -Name "StrongCertificateBindingEnforcement" -Value 2</div>
+            </div>             <div class='remediation-box'>
+                <h3>No strong certificate mapping found (2 events)</h3>
+                <p><strong>Impact: </strong><span class='high---certificates-using-weak-mapping-methods-impact'>HIGH - Certificates using weak mapping methods</span></p>
+                <p><strong>Recommended Action: </strong>Update to strong mapping methods (X509IssuerSerialNumber recommended). Example command to update user mapping:</p>
+                <div class='code-block'>set-aduser "username" -replace @{altSecurityIdentities= "X509:<I>DC=com,DC=contoso,CN=CONTOSO-DC-CA<SR>1200000000AC11000000002B"}</div>
+            </div>             <div class='remediation-box'>
+                <h3>Certificates predate user accounts (5 events)</h3>
+                <p><strong>Impact: </strong><span class='high---certificate-issued-before-user-account-creation-impact'>HIGH - Certificate issued before user account creation</span></p>
+                <p><strong>Recommended Action: </strong>Either reissue certificates or implement CertificateBackdatingCompensation. For temporary workaround (5 years backdating):</p>
+                <div class='code-block'>New-ItemProperty -Path "HKLM:\SYSTEM\CurrentControlSet\Services\Kdc" -Name "CertificateBackdatingCompensation" -Value 0x9660180 -PropertyType DWORD</div>
+            </div>             <div class='remediation-box'>
+                <h3>SID mismatch between user and certificate (3 events)</h3>
+                <p><strong>Impact: </strong><span class='high---certificate-sid-extension-doesn't-match-user-impact'>HIGH - Certificate SID extension doesn't match user</span></p>
+                <p><strong>Recommended Action: </strong>Reissue certificates with correct SID extension or create strong manual mapping</p>
+                <div class='code-block'>Certificates must be reissued by your Certificate Authority</div>
+            </div>
+    </div>
+    
+    <div class="section">
+        <h2>Detailed Events</h2>
+        <table class="events-table"> <colgroup><col/><col/><col/><col/><col/><col/><col/><col/></colgroup> <tr><th>Time</th><th>Event ID</th><th>Event Type</th><th>Affected User</th><th>Certificate Subject</th><th>Certificate Issuer</th><th>Serial Number</th><th>Thumbprint</th></tr> <tr><td>2025-01-15 2:21:50 PM</td><td>39</td><td>No strong certificate mapping found</td><td>jane.smith@fabrikam.net</td><td>CN=jane.smith,OU=Sales,DC=fabrikam,DC=net</td><td>CN=Enterprise-CA,DC=fabrikam,DC=net</td><td>3BC192EFF8A0E147</td><td>029A3FFE78851329CD1E57CDEC98B03EFECEF9A382950AB29954CC4B6C13F71CE60B11AE064798FC</td></tr> <tr><td>2025-01-15 2:50:38 PM</td><td>40</td><td>Certificate predates account</td><td>bob.wilson@fabrikam.net</td><td>CN=bob.wilson,OU=Sales,DC=fabrikam,DC=net</td><td>CN=Enterprise-CA,DC=fabrikam,DC=net</td><td>9942E38AA0DDFD2F</td><td>021138471143F9252D086141C72D7EF1A244C0699E7722D82DAB50068F4354AE077E7A27A4701AB0</td></tr> <tr><td>2025-01-15 4:17:02 PM</td><td>40</td><td>Certificate predates account</td><td>jane.smith@fabrikam.net</td><td>CN=jane.smith,OU=HR,DC=fabrikam,DC=net</td><td>CN=Enterprise-CA,DC=fabrikam,DC=net</td><td>F20705220D31F2E2</td><td>624A00ED63E8E2BD70829E83FBD841B99F7D0EC42C300FE12C0F206268DB9C94FCC07E5BFEDFC040</td></tr> <tr><td>2025-01-15 6:26:38 PM</td><td>41</td><td>User SID mismatch with certificate SID</td><td>john.doe@contoso.com</td><td>CN=john.doe,OU=Sales,DC=contoso,DC=com</td><td>CN=Enterprise-CA,DC=contoso,DC=com</td><td>ADE0E3C07A48F47F</td><td>FD398A80357D8325A3CDC0A8E0EA2302750810502311A1CD071CEA40BA6333A898C356EE58752B83</td></tr> <tr><td>2025-01-16 2:07:26 AM</td><td>40</td><td>Certificate predates account</td><td>alice.johnson@fabrikam.net</td><td>CN=alice.johnson,OU=Sales,DC=fabrikam,DC=net</td><td>CN=Enterprise-CA,DC=fabrikam,DC=net</td><td>FB0F907CDA1189C7</td><td>A16BAB7EC11D67D4B3E16DFEF42C702BA54DFE6293F32C7AE2EDA1DFC85D23987417CCE1706A8BD1</td></tr> <tr><td>2025-01-16 3:48:14 AM</td><td>40</td><td>Certificate predates account</td><td>mike.brown@acme.org</td><td>CN=mike.brown,OU=Finance,DC=acme,DC=org</td><td>CN=Enterprise-CA,DC=acme,DC=org</td><td>0BDD7B31768BF101</td><td>DFAD7136BB3B8EC5CBDF4A06390EADC81DAF311452E4C488FD65C707881BCE58C17A3FBE112DA3B4</td></tr> <tr><td>2025-01-16 5:00:14 AM</td><td>39</td><td>No strong certificate mapping found</td><td>alice.johnson@contoso.com</td><td>CN=alice.johnson,OU=Sales,DC=contoso,DC=com</td><td>CN=Enterprise-CA,DC=contoso,DC=com</td><td>CF39DBC10FEA1132</td><td>865DC1F6DCDAC387E33F74EF8714F7C976E116027AF81AC6CA2A0F88C39CF5142B8D71B8A3C8D259</td></tr> <tr><td>2025-01-16 6:12:14 AM</td><td>40</td><td>Certificate predates account</td><td>jane.smith@contoso.com</td><td>CN=jane.smith,OU=Finance,DC=contoso,DC=com</td><td>CN=Enterprise-CA,DC=contoso,DC=com</td><td>3A762135CA9F712A</td><td>ADBBB24C179923BA09D2D4391E697E001B8DF34D59EDA994420CFA8E7AE4CCCA627D0243CDA01D52</td></tr> <tr><td>2025-01-16 8:36:14 AM</td><td>41</td><td>User SID mismatch with certificate SID</td><td>mike.brown@acme.org</td><td>CN=mike.brown,OU=Marketing,DC=acme,DC=org</td><td>CN=Enterprise-CA,DC=acme,DC=org</td><td>F2DF023F21804FA7</td><td>AD43D8553C0ECC3B7FB539B21352410CD8AE3C18139D47357EA6375ED7A20A738AAC4F32544752E0</td></tr> <tr><td>2025-01-16 12:55:26 PM</td><td>41</td><td>User SID mismatch with certificate SID</td><td>bob.wilson@contoso.com</td><td>CN=bob.wilson,OU=HR,DC=contoso,DC=com</td><td>CN=Enterprise-CA,DC=contoso,DC=com</td><td>2F5999E81C3EAC70</td><td>B70FEA10209038267FDD101041E3A8F2491B6DDE49E080C4D54A356FD867BD8E5E13856B6137F85F</td></tr> </table>
+    </div>
+</body>
+</html>
